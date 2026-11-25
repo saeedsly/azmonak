@@ -24,6 +24,7 @@
     "seed": "npm run seed -w @azmoonak/server",
     "test:api": "tsx server/scripts/smoke-test.ts",
     "check:sql": "tsx server/scripts/check-mysql-sql.mts",
+    "release": "node scripts/build-release.mjs",
     "typecheck": "npm run typecheck -w @azmoonak/shared && npm run typecheck -w @azmoonak/server && npm run typecheck -w @azmoonak/web"
   }
 }

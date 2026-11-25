@@ -4,9 +4,34 @@ import type { Database } from './types.js';
 
 let instance: Kysely<Database> | null = null;
 
+/**
+ * بارگذاری درایور SQLite به‌صورت lazy.
+ * این بسته اختیاری است و روی بعضی سیستم‌ها (ویندوز بدون ابزار کامپایل) نصب نمی‌شود؛
+ * در آن حالت پیام خطای فارسی و راه‌حل روشن به کاربر نشان داده می‌شود.
+ */
+async function loadBetterSqlite3(): Promise<typeof import('better-sqlite3')> {
+  try {
+    const mod = await import('better-sqlite3');
+    return (mod as unknown as { default: typeof import('better-sqlite3') }).default;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      [
+        'بسته‌ی better-sqlite3 روی این سیستم نصب نشده است، بنابراین حالت SQLite قابل استفاده نیست.',
+        `جزئیات فنی: ${detail}`,
+        '',
+        'یکی از این دو راه را انتخاب کنید:',
+        '۱) نصب دوباره با دستور زیر (اگر خطا داد، ابزار Build Tools ویندوز را نصب کنید):',
+        '     npm install better-sqlite3',
+        '۲) استفاده از MySQL (توصیه‌شده برای محیط XAMPP): در فایل .env مقدار DB_MODE=mysql قرار دهید.',
+      ].join('\n'),
+    );
+  }
+}
+
 async function createKysely(): Promise<Kysely<Database>> {
   if (config.db.mode === 'sqlite') {
-    const { default: BetterSqlite3 } = await import('better-sqlite3');
+    const BetterSqlite3 = await loadBetterSqlite3();
     const database = new BetterSqlite3(config.db.sqliteFile);
     database.pragma('journal_mode = WAL');
     database.pragma('foreign_keys = ON');

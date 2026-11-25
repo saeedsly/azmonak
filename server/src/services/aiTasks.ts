@@ -335,6 +335,7 @@ ${input.items
 
 export async function summarizeSurvey(input: {
   examTitle: string;
+  responseCount?: number;
   stats: Record<string, unknown>;
 }): Promise<{ summary: string; demo: boolean }> {
   const result = await runAI({
@@ -343,7 +344,7 @@ export async function summarizeSurvey(input: {
     content: [
       {
         type: 'text',
-        text: `عنوان نظرسنجی: ${input.examTitle}\n\nآمار پاسخ‌ها:\n${JSON.stringify(input.stats, null, 2)}`,
+        text: `عنوان نظرسنجی: ${input.examTitle}\nتعداد کل پاسخ‌ها: ${input.responseCount ?? 0}\n\nآمار پاسخ‌ها:\n${JSON.stringify(input.stats, null, 2)}`,
       },
     ],
     temperature: 0.4,

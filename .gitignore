@@ -12,3 +12,4 @@ packages/*/dist/
 *.tsbuildinfo
 .vite/
 coverage/
+release/

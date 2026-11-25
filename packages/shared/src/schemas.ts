@@ -23,49 +23,90 @@ export const createUserSchema = z.object({
 
 /* ------------------------------------ دوره ------------------------------------ */
 
-export const courseInputSchema = z.object({
+/**
+ * نکته‌ی مهم: در Zod نسخه ۴ متد `.partial()` روی فیلدهایی که `.default()` دارند،
+ * همچنان مقدار پیش‌فرض را اعمال می‌کند و در نتیجه هر ویرایش جزئی، بقیه‌ی فیلدها را ریست می‌کند.
+ * به همین دلیل شکل پایه (بدون پیش‌فرض) جدا تعریف می‌شود:
+ *  - schema ورودی/ساخت  → با مقدار پیش‌فرض
+ *  - schema ویرایش       → فقط همان فیلدهایی که ارسال شده‌اند
+ */
+const courseFields = {
   title: z.string().trim().min(2, 'عنوان دوره لازم است').max(200),
-  description: z.string().max(5000).default(''),
-  code: z.string().trim().max(50).default(''),
-  instructor: z.string().trim().max(120).default(''),
-  color: z.string().trim().max(20).default(''),
-  isArchived: z.boolean().default(false),
+  description: z.string().max(5000),
+  code: z.string().trim().max(50),
+  instructor: z.string().trim().max(120),
+  color: z.string().trim().max(20),
+  isArchived: z.boolean(),
+};
+
+export const courseInputSchema = z.object({
+  ...courseFields,
+  description: courseFields.description.default(''),
+  code: courseFields.code.default(''),
+  instructor: courseFields.instructor.default(''),
+  color: courseFields.color.default(''),
+  isArchived: courseFields.isArchived.default(false),
 });
 
-export const courseUpdateSchema = courseInputSchema.partial();
+export const courseUpdateSchema = z.object(courseFields).partial();
 
 /* ------------------------------------- آزمون ----------------------------------- */
 
-export const examInputSchema = z.object({
+const examFields = {
   title: z.string().trim().min(2, 'عنوان آزمون لازم است').max(200),
-  description: z.string().max(5000).default(''),
-  instructions: z.string().max(5000).default(''),
-  courseId: z.string().uuid().nullable().optional(),
-  type: z.enum(EXAM_TYPES).default('EXAM'),
-  status: z.enum(EXAM_STATUSES).default('DRAFT'),
-  durationMinutes: z.number().int().min(0).max(1440).default(45),
-  maxAttempts: z.number().int().min(0).max(999).default(1),
-  shuffleQuestions: z.boolean().default(false),
-  shuffleOptions: z.boolean().default(false),
-  showResultImmediately: z.boolean().default(true),
-  showCorrectAnswers: z.boolean().default(false),
-  showPerQuestionFeedback: z.boolean().default(false),
-  passScore: z.number().int().min(0).max(100).default(50),
-  startAt: z.number().int().nullable().optional(),
-  endAt: z.number().int().nullable().optional(),
-  requireName: z.boolean().default(true),
-  requireEmail: z.boolean().default(false),
-  requirePhone: z.boolean().default(false),
-  requireNationalCode: z.boolean().default(false),
-  allowAnonymous: z.boolean().default(false),
+  description: z.string().max(5000),
+  instructions: z.string().max(5000),
+  courseId: z.string().uuid().nullable(),
+  type: z.enum(EXAM_TYPES),
+  status: z.enum(EXAM_STATUSES),
+  durationMinutes: z.number().int().min(0).max(1440),
+  maxAttempts: z.number().int().min(0).max(999),
+  shuffleQuestions: z.boolean(),
+  shuffleOptions: z.boolean(),
+  showResultImmediately: z.boolean(),
+  showCorrectAnswers: z.boolean(),
+  showPerQuestionFeedback: z.boolean(),
+  passScore: z.number().int().min(0).max(100),
+  startAt: z.number().int().nullable(),
+  endAt: z.number().int().nullable(),
+  requireName: z.boolean(),
+  requireEmail: z.boolean(),
+  requirePhone: z.boolean(),
+  requireNationalCode: z.boolean(),
+  allowAnonymous: z.boolean(),
+};
+
+export const examInputSchema = z.object({
+  ...examFields,
+  description: examFields.description.default(''),
+  instructions: examFields.instructions.default(''),
+  courseId: examFields.courseId.optional(),
+  type: examFields.type.default('EXAM'),
+  status: examFields.status.default('DRAFT'),
+  durationMinutes: examFields.durationMinutes.default(45),
+  maxAttempts: examFields.maxAttempts.default(1),
+  shuffleQuestions: examFields.shuffleQuestions.default(false),
+  shuffleOptions: examFields.shuffleOptions.default(false),
+  showResultImmediately: examFields.showResultImmediately.default(true),
+  showCorrectAnswers: examFields.showCorrectAnswers.default(false),
+  showPerQuestionFeedback: examFields.showPerQuestionFeedback.default(false),
+  passScore: examFields.passScore.default(50),
+  startAt: examFields.startAt.optional(),
+  endAt: examFields.endAt.optional(),
+  requireName: examFields.requireName.default(true),
+  requireEmail: examFields.requireEmail.default(false),
+  requirePhone: examFields.requirePhone.default(false),
+  requireNationalCode: examFields.requireNationalCode.default(false),
+  allowAnonymous: examFields.allowAnonymous.default(false),
 });
 
-export const examUpdateSchema = examInputSchema.partial();
+export const examUpdateSchema = z.object(examFields).partial();
 
 /* ------------------------------------- سوال ------------------------------------ */
 
 export const optionSchema = z.object({
-  id: z.string().min(1),
+  /** شناسه‌ی گزینه اختیاری است؛ اگر ارسال نشود سمت سرور ساخته می‌شود. */
+  id: z.string().min(1).optional(),
   text: z.string().min(1, 'متن گزینه لازم است').max(2000),
   isCorrect: z.boolean().default(false),
   order: z.number().int().default(0),
@@ -86,24 +127,40 @@ export const ratingConfigSchema = z.object({
   allowText: z.boolean().default(true),
 });
 
-export const questionInputSchema = z.object({
+const questionFields = {
   type: z.enum(QUESTION_TYPES),
   title: z.string().trim().min(1, 'متن سوال لازم است').max(8000),
-  description: z.string().max(8000).default(''),
-  imageUrl: z.string().max(600).default(''),
-  points: z.number().min(0).max(10000).default(1),
-  explanation: z.string().max(8000).default(''),
-  difficulty: z.number().int().min(1).max(5).default(3),
-  tags: z.array(z.string().max(60)).default([]),
-  isRequired: z.boolean().default(true),
-  allowPartialCredit: z.boolean().default(false),
-  options: z.array(optionSchema).default([]),
-  matrixConfig: matrixConfigSchema.nullable().optional(),
-  ratingConfig: ratingConfigSchema.nullable().optional(),
-  orderIndex: z.number().int().optional(),
+  description: z.string().max(8000),
+  imageUrl: z.string().max(600),
+  points: z.number().min(0).max(10000),
+  explanation: z.string().max(8000),
+  difficulty: z.number().int().min(1).max(5),
+  tags: z.array(z.string().max(60)),
+  isRequired: z.boolean(),
+  allowPartialCredit: z.boolean(),
+  options: z.array(optionSchema),
+  matrixConfig: matrixConfigSchema.nullable(),
+  ratingConfig: ratingConfigSchema.nullable(),
+  orderIndex: z.number().int(),
+};
+
+export const questionInputSchema = z.object({
+  ...questionFields,
+  description: questionFields.description.default(''),
+  imageUrl: questionFields.imageUrl.default(''),
+  points: questionFields.points.default(1),
+  explanation: questionFields.explanation.default(''),
+  difficulty: questionFields.difficulty.default(3),
+  tags: questionFields.tags.default([]),
+  isRequired: questionFields.isRequired.default(true),
+  allowPartialCredit: questionFields.allowPartialCredit.default(false),
+  options: questionFields.options.default([]),
+  matrixConfig: questionFields.matrixConfig.optional(),
+  ratingConfig: questionFields.ratingConfig.optional(),
+  orderIndex: questionFields.orderIndex.optional(),
 });
 
-export const questionUpdateSchema = questionInputSchema.partial();
+export const questionUpdateSchema = z.object(questionFields).partial();
 
 export const bulkQuestionSchema = z.object({
   questions: z.array(questionInputSchema).min(1, 'حداقل یک سوال لازم است').max(300),

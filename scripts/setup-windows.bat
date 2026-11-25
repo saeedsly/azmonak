@@ -3,6 +3,9 @@ chcp 65001 >nul
 setlocal enabledelayedexpansion
 cd /d "%~dp0.."
 
+set "MODE=%~1"
+if not "%MODE%"=="" set "MODE=%MODE:~0,6%"
+
 echo ============================================
 echo    ازمونک - راه‌اندازی اولیه روی ویندوز
 echo ============================================
@@ -16,13 +19,13 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo [۱/۵] نسخه‌ی Node.js: 
+echo [۱/۶] نسخه‌ی Node.js:
 node -v
-echo [۲/۵] نسخه‌ی npm:
+echo [۲/۶] نسخه‌ی npm:
 call npm -v
 echo.
 
-echo [۳/۵] نصب کتابخانه‌ها (ممکن است چند دقیقه طول بکشد)...
+echo [۳/۶] نصب کتابخانه‌ها (ممکن است چند دقیقه طول بکشد)...
 call npm install
 if errorlevel 1 (
   echo [خطا] نصب کتابخانه‌ها ناموفق بود.
@@ -30,14 +33,29 @@ if errorlevel 1 (
   exit /b 1
 )
 
-if not exist ".env" (
-  copy ".env.example" ".env" >nul
-  echo [۴/۵] فایل .env از روی نمونه ساخته شد.
+echo [۴/۶] بررسی درایور SQLite (اختیاری - فقط برای حالت بدون MySQL)...
+node -e "require('better-sqlite3')" >nul 2>nul
+if errorlevel 1 (
+  echo [اطلاع] درایور SQLite نصب نشد؛ این مشکلی ایجاد نمی‌کند اگر از MySQL استفاده کنید.
+  echo        برای فعال شدن حالت SQLite، دستور زیر را اجرا کنید:
+  echo          npm install better-sqlite3
 ) else (
-  echo [۴/۵] فایل .env از قبل وجود دارد (بدون تغییر).
+  echo [خوب] درایور SQLite آماده است.
 )
 
-echo [۵/۵] ساخت نسخه‌ی نهایی برنامه...
+if not exist ".env" (
+  copy ".env.example" ".env" >nul
+  if /i "%MODE%"=="sqlite" (
+    powershell -NoProfile -Command "(Get-Content '.env') -replace '^DB_MODE=.*$','DB_MODE=sqlite' | Set-Content '.env'" >nul 2>nul
+    echo [۵/۶] فایل .env ساخته شد (حالت SQLite - بدون نیاز به MySQL).
+  ) else (
+    echo [۵/۶] فایل .env از روی نمونه ساخته شد (حالت MySQL).
+  )
+) else (
+  echo [۵/۶] فایل .env از قبل وجود دارد (بدون تغییر).
+)
+
+echo [۶/۶] ساخت نسخه‌ی نهایی برنامه...
 call npm run build
 if errorlevel 1 (
   echo [خطا] ساخت برنامه ناموفق بود.
@@ -50,11 +68,12 @@ echo ============================================
 echo    نصب تمام شد.
 echo.
 echo    گام بعدی:
-echo    ۱) فایل .env را باز کنید و تنظیمات MySQL و
-echo       کلید هوش مصنوعی (ANTHROPIC_API_KEY) را وارد کنید.
-echo    ۲) برای ساخت داده‌ی اولیه (کاربر مدیر و نمونه) اجرا کنید:
+echo    ۱) برای داده‌ی اولیه (کاربر مدیر و نمونه) اجرا کنید:
 echo         npm run seed
-echo    ۳) برنامه را اجرا کنید:
+echo    ۲) برنامه را اجرا کنید:
 echo         scripts\start-windows.bat
+echo    ۳) سپس در مرورگر باز کنید:
+echo         http://localhost:4000/admin  (پنل مدیریت)
+echo         http://localhost:4000/       (ورود فراگیر)
 echo ============================================
 pause

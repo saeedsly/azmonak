@@ -233,10 +233,19 @@ export async function listExams(db: Db, filter: ExamFilter = {}) {
 
   const rows = await base.limit(pageSize).offset((page - 1) * pageSize).execute();
 
-  const countRow = await db
-    .selectFrom('exams')
-    .select((eb) => eb.fn.countAll<number>().as('c'))
-    .executeTakeFirst();
+  /* شمارش کل باید همان فیلترهای بالا را داشته باشد تا صفحه‌بندی درست کار کند */
+  let countQuery = db.selectFrom('exams').select((eb) => eb.fn.countAll<number>().as('c'));
+  if (filter.search) {
+    const like = `%${filter.search}%`;
+    countQuery = countQuery.where((eb) =>
+      eb.or([eb('exams.title', 'like', like), eb('exams.accessCode', 'like', like)]),
+    );
+  }
+  if (filter.courseId) countQuery = countQuery.where('exams.courseId', '=', filter.courseId);
+  if (filter.status) countQuery = countQuery.where('exams.status', '=', filter.status);
+  if (filter.type) countQuery = countQuery.where('exams.type', '=', filter.type);
+
+  const countRow = await countQuery.executeTakeFirst();
 
   return { rows, total: Number(countRow?.c ?? 0) };
 }
@@ -425,18 +434,19 @@ export async function upsertParticipant(
 
   const now = ts();
   if (existing) {
+    const merged = {
+      fullName: input.fullName || existing.fullName,
+      phone: input.phone || existing.phone,
+      nationalCode: input.nationalCode || existing.nationalCode,
+      meta: stringifyJson(input.meta ?? {}),
+      updatedAt: now,
+    };
     await db
       .updateTable('participants')
-      .set({
-        fullName: input.fullName || existing.fullName,
-        phone: input.phone || existing.phone,
-        nationalCode: input.nationalCode || existing.nationalCode,
-        meta: stringifyJson(input.meta ?? {}),
-        updatedAt: now,
-      } as never)
+      .set(merged)
       .where('id', '=', existing.id)
       .execute();
-    return { ...existing, fullName: input.fullName || existing.fullName };
+    return { ...existing, ...merged };
   }
 
   const row: ParticipantsTable = {
@@ -447,6 +457,7 @@ export async function upsertParticipant(
     nationalCode: input.nationalCode,
     meta: stringifyJson(input.meta ?? {}),
     createdAt: now,
+    updatedAt: now,
   };
   await db.insertInto('participants').values(row).execute();
   return row;
@@ -542,11 +553,22 @@ export async function listAttempts(db: Db, filter: AttemptFilter = {}) {
     .offset((page - 1) * pageSize)
     .execute();
 
-  const countRow = await db
-    .selectFrom('attempts')
-    .select((eb) => eb.fn.countAll<number>().as('c'))
-    .where('examId', '=', filter.examId ?? '')
-    .executeTakeFirst();
+  /* شمارش کل با همان فیلترها محاسبه می‌شود */
+  let countQuery = db.selectFrom('attempts').select((eb) => eb.fn.countAll<number>().as('c'));
+  if (filter.examId) countQuery = countQuery.where('attempts.examId', '=', filter.examId);
+  if (filter.status) countQuery = countQuery.where('attempts.status', '=', filter.status);
+  if (filter.search) {
+    const like = `%${filter.search}%`;
+    countQuery = countQuery.where((eb) =>
+      eb.or([
+        eb('attempts.participantName', 'like', like),
+        eb('attempts.participantEmail', 'like', like),
+        eb('attempts.participantNationalCode', 'like', like),
+      ]),
+    );
+  }
+
+  const countRow = await countQuery.executeTakeFirst();
 
   return { rows, total: Number(countRow?.c ?? 0) };
 }

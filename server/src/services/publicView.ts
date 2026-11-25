@@ -91,9 +91,9 @@ export function buildResult(
       title: full.title,
       points: full.points,
       yourAnswer: answerValue(answer),
-      correctAnswer: exam.showCorrectAnswers === 1 || !showDetails ? [] : correctAnswer,
-      isCorrect: answer ? answer.isCorrect === 1 : null,
-      pointsAwarded: answer ? answer.pointsAwarded / 100 : 0,
+      correctAnswer: showDetails && exam.showCorrectAnswers === 1 ? correctAnswer : [],
+      isCorrect: showDetails && answer ? answer.isCorrect === 1 : null,
+      pointsAwarded: showDetails && answer ? answer.pointsAwarded / 100 : 0,
       maxPoints: full.points,
       explanation:
         showDetails && (exam.showPerQuestionFeedback === 1 || exam.showCorrectAnswers === 1)

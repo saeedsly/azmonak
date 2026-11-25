@@ -61,7 +61,9 @@ async function requireAttempt(req: Request, res: Response, next: NextFunction): 
   try {
     const token = attemptToken(req);
     if (!token) throw unauthorized('دسترسی به این تلاش معتبر نیست.');
-    const { attemptId } = await verifyAttemptToken(token);
+    const { attemptId } = await verifyAttemptToken(token).catch(() => {
+      throw unauthorized('نشست شما منقضی شده است؛ لطفاً آزمون را دوباره شروع کنید.');
+    });
     if (attemptId !== req.params.id) throw forbidden('این تلاش متعلق به شما نیست.');
     const db = await getDb();
     const attempt = await getAttempt(db, attemptId);

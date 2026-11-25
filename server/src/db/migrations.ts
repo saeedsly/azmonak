@@ -113,6 +113,7 @@ export const migrations: Migration[] = [
         .addColumn('nationalCode', 'varchar(191)', (c) => c)
         .addColumn('meta', 'text', (c) => c)
         .addColumn('createdAt', 'bigint', (c) => ts(c))
+        .addColumn('updatedAt', 'bigint', (c) => ts(c))
         .execute();
 
       await db.schema
@@ -227,6 +228,22 @@ export const migrations: Migration[] = [
       await db.schema.createIndex('idx_answers_question').on('answers').column('questionId').execute();
       await db.schema.createIndex('idx_invites_exam').on('invites').column('examId').execute();
       await db.schema.createIndex('idx_audit_created').on('audit_logs').column('createdAt').execute();
+    },
+  },
+  {
+    name: '002_participants_updated_at',
+    up: async (db) => {
+      /* برای نصب‌های قدیمی که جدول participants بدون ستون updatedAt ساخته شده بود */
+      try {
+        await db.schema
+          .alterTable('participants')
+          .addColumn('updatedAt', 'bigint', (c) => c.notNull().defaultTo(0))
+          .execute();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const alreadyExists = /duplicate|already exists/i.test(message);
+        if (!alreadyExists) throw error;
+      }
     },
   },
 ];

@@ -97,6 +97,7 @@ export interface ParticipantsTable {
   nationalCode: string;
   meta: string;
   createdAt: number;
+  updatedAt: number;
 }
 
 export interface AttemptsTable {

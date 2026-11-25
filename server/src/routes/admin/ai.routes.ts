@@ -4,8 +4,10 @@ import { getDb } from '../../db/index.js';
 import {
   createAiJob,
   getAttemptWithExam,
+  getExam,
   listAnswers,
   listAiJobs,
+  listAttempts,
   listQuestions,
   updateAiJob,
 } from '../../db/repos.js';
@@ -242,15 +244,59 @@ aiRouter.post('/summarize', async (req, res) => {
   const examId = String(req.body?.examId ?? '');
   if (!examId) throw badRequest('شناسه آزمون ارسال نشده است.');
   const db = await getDb();
+  const exam = await getExam(db, examId);
+  if (!exam) throw notFound('آزمون یافت نشد.');
   const questions = await listQuestions(db, examId);
   if (questions.length === 0) throw badRequest('برای این آزمون سوالی ثبت نشده است.');
 
+  /* آمار واقعی پاسخ‌ها جمع‌آوری می‌شود تا خلاصه بر پایه‌ی داده باشد */
+  const { rows } = await listAttempts(db, { examId, pageSize: 2000 });
+  const attemptIds = (rows as unknown as Array<{ id: string }>).map((attempt) => attempt.id);
+  const answers = attemptIds.length
+    ? await db
+        .selectFrom('answers')
+        .selectAll()
+        .where('attemptId', 'in', attemptIds)
+        .execute()
+    : [];
+
   const stats: Record<string, unknown> = {};
   for (const question of questions) {
-    stats[question.title] = { type: question.type, points: question.points / 100 };
+    const full = mapQuestion(question);
+    const values = answers
+      .filter((answer) => answer.questionId === question.id)
+      .map((answer) => parseJson<unknown>(answer.value, null))
+      .filter((value) => value !== null && value !== '');
+
+    const counts = new Map<string, number>();
+    for (const value of values) {
+      const list = Array.isArray(value) ? value.map(String) : [String(value)];
+      for (const item of list) counts.set(item, (counts.get(item) ?? 0) + 1);
+    }
+
+    const numeric = values
+      .map((value) => Number(Array.isArray(value) ? value[0] : value))
+      .filter((value) => Number.isFinite(value));
+
+    stats[full.title] = {
+      type: question.type,
+      responses: values.length,
+      average:
+        numeric.length > 0
+          ? Math.round((numeric.reduce((sum, value) => sum + value, 0) / numeric.length) * 100) / 100
+          : null,
+      options: full.options.map((option) => ({
+        text: option.text,
+        count: counts.get(option.id) ?? 0,
+      })),
+    };
   }
 
-  const result = await summarizeSurvey({ examTitle: questions[0].examId, stats });
+  const result = await summarizeSurvey({
+    examTitle: exam.title,
+    responseCount: attemptIds.length,
+    stats,
+  });
   res.json(result);
 });
 
