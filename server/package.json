@@ -1,0 +1,40 @@
+{
+  "name": "@azmoonak/server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "seed": "tsx src/db/seed.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@azmoonak/shared": "*",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.2.3",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.5",
+    "helmet": "^8.3.0",
+    "jose": "^6.2.18",
+    "kysely": "^0.29.9",
+    "multer": "^2.5.0",
+    "mysql2": "^3.24.6",
+    "zod": "^4.6.7"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^13.2.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^22.19.1",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3"
+  }
+}

@@ -1,0 +1,27 @@
+# راه‌اندازی سریع MySQL با Docker (اختیاری)
+# اجرا:  docker compose up -d
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: azmoonak-mysql
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: AzmoonakRoot@123
+      MYSQL_DATABASE: azmoonak
+      MYSQL_USER: azmoonak
+      MYSQL_PASSWORD: Azmoonak@123
+    ports:
+      - "3306:3306"
+    volumes:
+      - azmoonak-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uazmoonak", "-pAzmoonak@123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  azmoonak-mysql-data:

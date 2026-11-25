@@ -1,0 +1,29 @@
+{
+  "name": "azmoonak",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ازمونک — سامانه آزمون آنلاین و نظرسنجی",
+  "type": "module",
+  "workspaces": [
+    "packages/shared",
+    "server",
+    "web"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "build": "npm run build -w @azmoonak/shared && npm run build -w @azmoonak/server && npm run build -w @azmoonak/web",
+    "build:shared": "npm run build -w @azmoonak/shared",
+    "build:server": "npm run build -w @azmoonak/server",
+    "build:web": "npm run build -w @azmoonak/web",
+    "dev": "npm run dev -w @azmoonak/server",
+    "dev:server": "npm run dev -w @azmoonak/server",
+    "dev:web": "npm run dev -w @azmoonak/web",
+    "start": "npm run start -w @azmoonak/server",
+    "seed": "npm run seed -w @azmoonak/server",
+    "test:api": "tsx server/scripts/smoke-test.ts",
+    "check:sql": "tsx server/scripts/check-mysql-sql.mts",
+    "typecheck": "npm run typecheck -w @azmoonak/shared && npm run typecheck -w @azmoonak/server && npm run typecheck -w @azmoonak/web"
+  }
+}

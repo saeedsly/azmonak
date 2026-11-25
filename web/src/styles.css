@@ -1,0 +1,133 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Vazirmatn', system-ui, 'Segoe UI', sans-serif;
+
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-300: #a5b4fc;
+  --color-brand-400: #818cf8;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-brand-800: #3730a3;
+  --color-brand-900: #312e81;
+
+  --color-ink-50: #f8fafc;
+  --color-ink-100: #f1f5f9;
+  --color-ink-200: #e2e8f0;
+  --color-ink-300: #cbd5e1;
+  --color-ink-400: #94a3b8;
+  --color-ink-500: #64748b;
+  --color-ink-600: #475569;
+  --color-ink-700: #334155;
+  --color-ink-800: #1e293b;
+  --color-ink-900: #0f172a;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-ink-100 text-ink-800 antialiased;
+    background-image:
+      radial-gradient(circle at 12% -10%, rgba(99, 102, 241, 0.16), transparent 42%),
+      radial-gradient(circle at 92% 4%, rgba(14, 165, 233, 0.12), transparent 38%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font-family: inherit;
+  }
+
+  ::selection {
+    @apply bg-brand-200 text-brand-900;
+  }
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium
+    transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-ink-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-12px_rgba(15,23,42,0.18)];
+  }
+
+  .field {
+    @apply w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-800
+      outline-none transition placeholder:text-ink-400
+      focus:border-brand-400 focus:ring-4 focus:ring-brand-100
+      disabled:cursor-not-allowed disabled:bg-ink-50 disabled:text-ink-400;
+  }
+
+  .btn-primary {
+    @apply btn bg-brand-600 text-white shadow-sm hover:bg-brand-700 focus-visible:outline-2
+      focus-visible:outline-offset-2 focus-visible:outline-brand-600;
+  }
+
+  .btn-soft {
+    @apply btn border border-ink-200 bg-white text-ink-700 hover:border-brand-300 hover:text-brand-700;
+  }
+
+  .btn-ghost {
+    @apply btn text-ink-600 hover:bg-ink-100;
+  }
+
+  .btn-danger {
+    @apply btn bg-rose-600 text-white hover:bg-rose-700;
+  }
+
+  .label {
+    @apply mb-1.5 block text-xs font-medium text-ink-500;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium;
+  }
+
+  .table-wrap {
+    @apply overflow-x-auto rounded-2xl border border-ink-200 bg-white;
+  }
+
+  .th {
+    @apply whitespace-nowrap px-4 py-3 text-right text-xs font-semibold text-ink-500;
+  }
+
+  .td {
+    @apply px-4 py-3 text-right text-sm text-ink-700 align-middle;
+  }
+
+  .option-row {
+    @apply flex items-start gap-3 rounded-xl border border-ink-200 bg-white p-3 transition
+      hover:border-brand-300;
+  }
+
+  .option-row-active {
+    @apply border-brand-400 bg-brand-50/60 ring-2 ring-brand-100;
+  }
+}
+
+@keyframes azmoonak-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: azmoonak-fade-up 0.35s ease-out both;
+}
