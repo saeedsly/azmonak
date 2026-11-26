@@ -31,8 +31,147 @@ const EXCLUDE_DIRS = new Set([
 ]);
 const EXCLUDE_FILES = new Set(['.env', '.DS_Store', 'azmoonak.db', 'prod-test.db']);
 
-/** نام فایل‌های غیرلاتین داخل بسته، به نام امن ASCII تبدیل می‌شود تا در ویندوز مشکلی نباشد. */
-const RENAME = new Map([['راهنمای-اجرا.md', 'QUICKSTART-FA.md']]);
+/**
+ * نگاشت مسیر فارسی → مسیر ASCII برای بسته‌ی ZIP.
+ * دلیل: نام فارسی فایل/پوشه روی بعضی ویندوزهای قدیمی یا در ابزارهای فشرده‌سازی
+ * درست نمایش داده نمی‌شود. داخل مخزن گیت نام‌ها فارسی می‌مانند.
+ */
+const DOCS_LAYOUT = [
+  ['راهنما/۰۰-چک‌لیست-کارهای-من', 'docs/00-my-checklist', [['README.md', 'README.md']]],
+  [
+    'راهنما/۰۱-شروع-سریع',
+    'docs/01-quick-start',
+    [
+      ['README.md', 'README.md'],
+      ['راهنمای-اجرا.md', 'QUICKSTART-FA.md'],
+    ],
+  ],
+  [
+    'راهنما/۰۲-نصب-ویندوز-و-xampp',
+    'docs/02-install-windows',
+    [
+      ['README.md', 'README.md'],
+      ['نصب-روی-ویندوز.md', 'install-windows.md'],
+      ['نصب-با-xampp.md', 'install-xampp.md'],
+    ],
+  ],
+  [
+    'راهنما/۰۳-مدیریت-و-برگزاری-آزمون',
+    'docs/03-admin-and-conducting',
+    [
+      ['README.md', 'README.md'],
+      ['ساخت-آزمون-و-انتشار.md', 'create-and-publish.md'],
+      ['ساخت-و-بارگذاری-سوال.md', 'questions-and-import.md'],
+      ['داوری-و-تحلیل-نتایج.md', 'grading-and-analytics.md'],
+      ['نظرسنجی.md', 'surveys.md'],
+    ],
+  ],
+  [
+    'راهنما/۰۴-راهنمای-فراگیر',
+    'docs/04-participant-guide',
+    [
+      ['README.md', 'README.md'],
+      ['راهنمای-فراگیر.md', 'participant-guide.md'],
+    ],
+  ],
+  [
+    'راهنما/۰۵-معماری-و-ساختار-کد',
+    'docs/05-architecture',
+    [
+      ['README.md', 'README.md'],
+      ['معماری.md', 'architecture.md'],
+      ['ساختار-پوشه‌ها.md', 'project-structure.md'],
+      ['مدل-داده.md', 'data-model.md'],
+    ],
+  ],
+  [
+    'راهنما/۰۶-توسعه-دهنده',
+    'docs/06-developer',
+    [
+      ['README.md', 'README.md'],
+      ['محیط-توسعه.md', 'dev-environment.md'],
+      ['مرجع-api.md', 'api-reference.md'],
+    ],
+  ],
+  [
+    'راهنما/۰۷-استقرار-و-سرویس-دائمی',
+    'docs/07-deployment',
+    [
+      ['README.md', 'README.md'],
+      ['ویندوز.md', 'windows-service.md'],
+      ['لینوکس-nginx.md', 'linux-nginx.md'],
+    ],
+  ],
+  [
+    'راهنما/۰۸-پشتیبانی-و-بازیابی',
+    'docs/08-backup',
+    [
+      ['README.md', 'README.md'],
+      ['پشتیبان-گیری.md', 'backup-and-restore.md'],
+    ],
+  ],
+  [
+    'راهنما/۰۹-رفع-خطا-و-سوالات-پرتکرار',
+    'docs/09-troubleshooting',
+    [
+      ['README.md', 'README.md'],
+      ['رفع-خطا.md', 'troubleshooting.md'],
+      ['سوالات-پرتکرار.md', 'faq.md'],
+    ],
+  ],
+];
+
+/** نگاشت آماده‌ی مسیر کامل → مسیر داخل بسته */
+const RENAME = new Map();
+for (const [sourceDir, targetDir, files] of DOCS_LAYOUT) {
+  for (const [sourceFile, targetFile] of files) {
+    RENAME.set(`${sourceDir}/${sourceFile}`, `${targetDir}/${targetFile}`);
+  }
+}
+
+/** پوشه‌های فارسی ریشه → نام ASCII متناظر در بسته */
+const ROOT_FOLDERS = new Map([
+  ['راهنما', 'docs'],
+  ['استقرار', 'deploy'],
+]);
+
+/** نگاشت حروف فارسی/عربی به لاتین برای نام‌گذاری امن در ویندوز */
+const TRANSLIT = {
+  '۰': '0', '۱': '1', '۲': '2', '۳': '3', '۴': '4',
+  '۵': '5', '۶': '6', '۷': '7', '۸': '8', '۹': '9',
+  ا: 'a', آ: 'a', ب: 'b', پ: 'p', ت: 't', ث: 's', ج: 'j', چ: 'ch',
+  ح: 'h', خ: 'kh', د: 'd', ذ: 'z', ر: 'r', ز: 'z', ژ: 'zh', س: 's',
+  ش: 'sh', ص: 's', ض: 'z', ط: 't', ظ: 'z', ع: 'a', غ: 'gh', ف: 'f',
+  ق: 'q', ك: 'k', ک: 'k', گ: 'g', ل: 'l', م: 'm', ن: 'n', و: 'v',
+  ه: 'h', ة: 'h', ی: 'i', ئ: 'e', ء: '', ؤ: 'o',
+  '‌': '-', '‍': '-', ' ': '-', _: '-', 'ـ': '',
+};
+
+/** تبدیل یک بخش از مسیر به شکل ASCII امن */
+function toAsciiName(segment) {
+  let out = '';
+  for (const char of segment) {
+    if (TRANSLIT[char] !== undefined) {
+      out += TRANSLIT[char];
+    } else if (/[A-Za-z0-9.\-_+]/.test(char)) {
+      out += char;
+    }
+  }
+  return out.replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'file';
+}
+
+/** تبدیل مسیر نسبی فایل به مسیر ASCII داخل بسته */
+function toPackagePath(relative) {
+  const explicit = RENAME.get(relative);
+  if (explicit) return explicit;
+
+  const segments = relative.split('/');
+  const mapped = segments.map((segment, index) => {
+    if (index === 0 && ROOT_FOLDERS.has(segment)) return ROOT_FOLDERS.get(segment);
+    return /^[A-Za-z0-9.\-_+]+$/.test(segment) ? segment : toAsciiName(segment);
+  });
+  return mapped.join('/');
+}
 
 function shouldSkip(name) {
   return EXCLUDE_DIRS.has(name) || EXCLUDE_FILES.has(name);
@@ -66,7 +205,7 @@ function collect(dir, base = dir, acc = []) {
     if (entry.isDirectory()) {
       collect(full, base, acc);
     } else if (entry.isFile()) {
-      acc.push({ absolute: full, relative: RENAME.get(relative) ?? relative });
+      acc.push({ absolute: full, relative: toPackagePath(relative) });
     }
   }
   return acc;

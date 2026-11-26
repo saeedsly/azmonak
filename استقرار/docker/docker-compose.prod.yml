@@ -1,0 +1,94 @@
+# ---------------------------------------------------------------------
+#  ازمونک — استقرار با Docker Compose (محیط عملیاتی)
+#
+#  استفاده:
+#    cd /opt/azmoonak
+#    cp .env.example .env && nano .env
+#    docker compose -f استقرار/docker/docker-compose.prod.yml up -d
+#
+#  نکته: در .env مقدار MYSQL_URL باید به سرویس داخلی اشاره کند:
+#    MYSQL_URL=mysql://azmoonak:Azmoonak@123@mysql:3306/azmoonak
+# ---------------------------------------------------------------------
+
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: استقرار/docker/Dockerfile
+    container_name: azmoonak-app
+    restart: unless-stopped
+    env_file:
+      - ../../.env
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4000
+      DB_MODE: mysql
+      MYSQL_URL: mysql://azmoonak:Azmoonak@123@mysql:3306/azmoonak
+    volumes:
+      - azmoonak-data:/app/server/data
+    ports:
+      - "4000:4000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - azmoonak
+
+  mysql:
+    image: mysql:8.4
+    container_name: azmoonak-mysql
+    restart: unless-stopped
+    command: >
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-ChangeMeRoot123}
+      MYSQL_DATABASE: azmoonak
+      MYSQL_USER: azmoonak
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-Azmoonak@123}
+    volumes:
+      - azmoonak-mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-ChangeMeRoot123}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - azmoonak
+
+  backup:
+    image: mysql:8.4
+    container_name: azmoonak-backup
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: azmoonak
+      MYSQL_USER: azmoonak
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-Azmoonak@123}
+      BACKUP_DIR: /backups
+      KEEP_DAYS: 30
+    volumes:
+      - azmoonak-backups:/backups
+    entrypoint: >
+      sh -c "while true; do
+        mysqldump -h$$MYSQL_HOST -u$$MYSQL_USER -p$$MYSQL_PASSWORD
+        --single-transaction --default-character-set=utf8mb4 $$MYSQL_DATABASE
+        > /backups/azmoonak-$$(date +%Y-%m-%d_%H%M).sql 2>/dev/null;
+        find /backups -name '*.sql' -mtime +$$KEEP_DAYS -delete;
+        sleep 86400;
+      done"
+    networks:
+      - azmoonak
+
+volumes:
+  azmoonak-data:
+  azmoonak-mysql:
+  azmoonak-backups:
+
+networks:
+  azmoonak:
+    driver: bridge

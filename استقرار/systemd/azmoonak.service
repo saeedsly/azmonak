@@ -1,0 +1,37 @@
+# ---------------------------------------------------------------------
+#  ازمونک — سرویس systemd
+#  نصب:
+#    sudo cp استقرار/systemd/azmoonak.service /etc/systemd/system/
+#    sudo systemctl daemon-reload
+#    sudo systemctl enable --now azmoonak
+#  لاگ:
+#    sudo journalctl -u azmoonak -f
+# ---------------------------------------------------------------------
+
+[Unit]
+Description=Azmoonak - Online Exam & Survey System
+Documentation=file:/opt/azmoonak/README.md
+After=network.target mysql.service mariadb.service
+Wants=mysql.service mariadb.service
+
+[Service]
+Type=simple
+User=azmoonak
+Group=azmoonak
+WorkingDirectory=/opt/azmoonak
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node server/dist/index.js
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# سخت‌گیری امنیتی (اگر سیستم‌فایل شما اجازه می‌دهد)
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/opt/azmoonak/server/data
+
+[Install]
+WantedBy=multi-user.target
